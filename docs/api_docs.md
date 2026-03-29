@@ -22,4 +22,26 @@ For now, refer to the Swagger UI linked above for an actionable and up-to-date r
 - **OpenAPI Specification:** 3.0
 
 ## Authentication
-*(To be populated as endpoint security is finalized)*
+
+### 1. Register a New User
+**Endpoint:** `POST /api/auth/register`
+
+Creates a new user account with employee details and sets up their initial system role.
+
+**Request Payload:**
+```json
+{
+  "name": "Jane Doe",
+  "email": "jane.doe@example.com",
+  "password": "StrongPassword123!",
+  "role": "EMPLOYEE"
+}
+```
+
+*Note: Passwords must be at least 8 characters and contain an uppercase letter, lowercase letter, number, and special character.*
+
+**Responses:**
+- `201 Created`: User successfully registered.
+- `400 Bad Request`: Validation errors (e.g., missing fields, weak password, or email already exists).
+
+*(Other authentication endpoints such as login/token refresh will be populated as they are built)*
