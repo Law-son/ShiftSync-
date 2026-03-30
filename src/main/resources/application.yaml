@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: app
+  config:
+    import: optional:file:.env[.properties]
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/shiftsyncdb}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    show-sql: true
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+
+application:
+  security:
+    jwt:
+      secret-key: ${JWT_SECRET_KEY:VGhpc0lzQURlZmF1bHRTZWNyZXRLZXlGb3JEZXZlbG9wbWVudE9ubHlQbGVhc2VDaGFuZ2VJdEluUHJvZHVjdGlvbkVudmlyb25tZW50}
+      expiration: ${JWT_EXPIRATION:86400000} # 24 hours in milliseconds
+      refresh-token:
+        expiration: ${JWT_REFRESH_EXPIRATION:604800000} # 7 days in milliseconds
+    cookie:
+      secure: ${COOKIE_SECURE:false}
+      same-site: ${COOKIE_SAME_SITE:Strict}
