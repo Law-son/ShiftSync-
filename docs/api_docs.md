@@ -44,4 +44,31 @@ Creates a new user account with employee details and sets up their initial syste
 - `201 Created`: User successfully registered.
 - `400 Bad Request`: Validation errors (e.g., missing fields, weak password, or email already exists).
 
-*(Other authentication endpoints such as login/token refresh will be populated as they are built)*
+### 2. Log In
+**Endpoint:** `POST /api/auth/login`
+
+Authenticates a user and issues a fresh set of JWT access and refresh tokens. For security against XSS, tokens are delivered exclusively embedded in `HttpOnly` Set-Cookie headers.
+
+**Request Payload:**
+```json
+{
+  "email": "jane.doe@example.com",
+  "password": "StrongPassword123!"
+}
+```
+
+**Responses:**
+- `200 OK`: Successful authentication. Response includes user details. Cookies are set securely.
+- `401 Unauthorized`: Distinguishes between "User not found" and "Incorrect password" for tailored feedback.
+
+### 3. Refresh Token
+**Endpoint:** `POST /api/auth/refresh`
+
+Exchanges a valid refresh token for a brand new set of access and refresh tokens.
+
+- The system prioritizes reading the `refreshToken` from the `HttpOnly` cookie.
+- If no cookie is present, it falls back to inspecting the `Authorization: Bearer <refreshToken>` header.
+
+**Responses:**
+- `200 OK`: Tokens successfully refreshed. Updates the `HttpOnly` cookies.
+- `401 Unauthorized`: Refresh token is missing, invalid, or expired.
