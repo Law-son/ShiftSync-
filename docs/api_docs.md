@@ -72,3 +72,40 @@ Exchanges a valid refresh token for a brand new set of access and refresh tokens
 **Responses:**
 - `200 OK`: Tokens successfully refreshed. Updates the `HttpOnly` cookies.
 - `401 Unauthorized`: Refresh token is missing, invalid, or expired.
+
+## Role-Based Access Enforcement (RBAC) Test Endpoints
+
+A temporary `TestRoleController` has been implemented to verify ShiftSync's method-level security (`@PreAuthorize()`) and unified global exception handling behavior.
+
+### 1. Employee-Only Access
+**Endpoint:** `GET /api/test-roles/employee`
+- Valid Role: `EMPLOYEE`
+- Responses: `200 OK` (success) | `401 Unauthorized` (missing/invalid token) | `403 Forbidden` (wrong role)
+
+### 2. Manager-Only Access
+**Endpoint:** `GET /api/test-roles/manager`
+- Valid Role: `MANAGER`
+- Responses: Same as above.
+
+### 3. HR Admin-Only Access
+**Endpoint:** `GET /api/test-roles/hr-admin`
+- Valid Role: `HR_ADMIN`
+- Responses: Same as above.
+
+### 4. Manager OR HR Admin Access
+**Endpoint:** `GET /api/test-roles/manager-or-hr`
+- Valid Roles: `MANAGER` or `HR_ADMIN`
+- Responses: Same as above.
+
+### Global Structured Error Format
+If you hit an unsecured boundary without an appropriate role, you will reliably receive the following ShiftSync-standard JSON envelope:
+
+```json
+{
+  "timestamp": "2026-03-30T10:00:00.00000",
+  "status": 403,
+  "error": "Forbidden",
+  "message": "Access Denied: You do not have sufficient privileges to perform this action.",
+  "fieldErrors": {}
+}
+```
