@@ -3,7 +3,7 @@
 -- LOCATIONS
 CREATE TABLE locations (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL UNIQUE,
     address TEXT,
     max_headcount_per_shift INT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -16,23 +16,32 @@ CREATE TABLE departments (
     location_id INT NOT NULL REFERENCES locations(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (location_id, name)
 );
 
--- USERS (combined with Employee Profile)
+-- USERS (auth + role only)
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
-    full_name VARCHAR(255) NOT NULL,
     role VARCHAR(50) NOT NULL, -- EMPLOYEE, MANAGER, HR_ADMIN
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- EMPLOYEES (full profile, 1:1 with users)
+CREATE TABLE employees (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    full_name VARCHAR(255) NOT NULL,
     phone VARCHAR(50),
     employment_type VARCHAR(50), -- FULL_TIME, PART_TIME, CONTRACT
     department_id INT REFERENCES departments(id) ON DELETE SET NULL,
-    location_id INT REFERENCES locations(id) ON DELETE SET NULL, -- Primary Location
-    skills_certifications TEXT[], -- Postgres native Array for skills
+    location_id INT REFERENCES locations(id) ON DELETE SET NULL,
+    skills_certifications TEXT[],
     contracted_weekly_hours NUMERIC(5, 2),
-    is_active BOOLEAN DEFAULT TRUE, -- For soft delete
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -60,6 +69,7 @@ CREATE TABLE unavailability_blocks (
     user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
+    reason TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -87,7 +97,7 @@ CREATE TABLE shifts (
     end_time TIME NOT NULL,
     required_skill VARCHAR(255),
     minimum_headcount INT DEFAULT 1,
-    is_cancelled BOOLEAN DEFAULT FALSE,
+    status VARCHAR(50) NOT NULL DEFAULT 'OPEN', -- OPEN, CANCELLED
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -109,6 +119,7 @@ CREATE TABLE swap_requests (
     source_shift_assignment_id INT NOT NULL REFERENCES shift_assignments(id) ON DELETE CASCADE,
     target_shift_assignment_id INT REFERENCES shift_assignments(id) ON DELETE SET NULL,
     status VARCHAR(50) NOT NULL, -- PENDING_MANAGER_APPROVAL, APPROVED, REJECTED
+    manager_note TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -120,6 +131,8 @@ CREATE TABLE notifications (
     message TEXT NOT NULL,
     notification_type VARCHAR(100) NOT NULL,
     is_read BOOLEAN DEFAULT FALSE,
+    related_entity_type VARCHAR(100), -- e.g. 'SHIFT', 'LEAVE_REQUEST', 'SWAP_REQUEST'
+    related_entity_id BIGINT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -129,7 +142,7 @@ CREATE TABLE audit_logs (
     entity_type VARCHAR(100) NOT NULL,
     entity_id VARCHAR(100) NOT NULL,
     action VARCHAR(50) NOT NULL, -- CREATE, UPDATE, DELETE
-    actor_user_id INT, -- Nullable because system actions might not have an actor
+    actor_user_id INT REFERENCES users(id) ON DELETE SET NULL, -- Nullable because system actions might not have an actor
     actor_role VARCHAR(50),
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     previous_state JSONB,
