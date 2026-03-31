@@ -25,7 +25,7 @@ CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
-    role VARCHAR(50) NOT NULL, -- EMPLOYEE, MANAGER, HR_ADMIN
+    role VARCHAR(50) NOT NULL CHECK (role IN ('EMPLOYEE', 'MANAGER', 'HR_ADMIN')),
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -37,11 +37,12 @@ CREATE TABLE employees (
     user_id INT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
     full_name VARCHAR(255) NOT NULL,
     phone VARCHAR(50),
-    employment_type VARCHAR(50), -- FULL_TIME, PART_TIME, CONTRACT
-    department_id INT REFERENCES departments(id) ON DELETE SET NULL,
-    location_id INT REFERENCES locations(id) ON DELETE SET NULL,
+    employment_type VARCHAR(50) NOT NULL CHECK (employment_type IN ('FULL_TIME', 'PART_TIME', 'CONTRACT')),
+    department_id INT NOT NULL REFERENCES departments(id) ON DELETE RESTRICT,
+    location_id INT NOT NULL REFERENCES locations(id) ON DELETE RESTRICT,
     skills_certifications TEXT[],
-    contracted_weekly_hours NUMERIC(5, 2),
+    contracted_weekly_hours NUMERIC(5, 2) NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -60,7 +61,8 @@ CREATE TABLE recurring_availabilities (
     day_of_week INT NOT NULL, -- 1 = Monday, 7 = Sunday
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (user_id, day_of_week, start_time, end_time)
 );
 
 -- UNAVAILABILITY BLOCKS (One-off blocks)
@@ -79,8 +81,8 @@ CREATE TABLE leave_requests (
     user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
-    leave_type VARCHAR(50) NOT NULL, -- ANNUAL, SICK, UNPAID
-    status VARCHAR(50) NOT NULL, -- PENDING, APPROVED, REJECTED, CANCELLED
+    leave_type VARCHAR(50) NOT NULL CHECK (leave_type IN ('ANNUAL', 'SICK', 'UNPAID')),
+    status VARCHAR(50) NOT NULL CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED', 'CANCELLED')),
     reason TEXT,
     hr_note TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -97,7 +99,7 @@ CREATE TABLE shifts (
     end_time TIME NOT NULL,
     required_skill VARCHAR(255),
     minimum_headcount INT DEFAULT 1,
-    status VARCHAR(50) NOT NULL DEFAULT 'OPEN', -- OPEN, CANCELLED
+    status VARCHAR(50) NOT NULL DEFAULT 'OPEN' CHECK (status IN ('OPEN', 'CANCELLED')),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -118,7 +120,7 @@ CREATE TABLE swap_requests (
     target_user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     source_shift_assignment_id INT NOT NULL REFERENCES shift_assignments(id) ON DELETE CASCADE,
     target_shift_assignment_id INT REFERENCES shift_assignments(id) ON DELETE SET NULL,
-    status VARCHAR(50) NOT NULL, -- PENDING_MANAGER_APPROVAL, APPROVED, REJECTED
+    status VARCHAR(50) NOT NULL CHECK (status IN ('PENDING_MANAGER_APPROVAL', 'APPROVED', 'REJECTED')),
     manager_note TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
