@@ -15,8 +15,8 @@ jobs:
       postgres:
         image: postgres:15
         env:
-          POSTGRES_USER: ${{ secrets.DB_USERNAME }}
-          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpass
           POSTGRES_DB: shiftsyncdb
         options: >-
           --health-cmd pg_isready
@@ -38,6 +38,6 @@ jobs:
 
     - name: Build with Maven
       env:
-        DB_USERNAME: ${{ secrets.DB_USERNAME }}
-        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        DB_USERNAME: testuser
+        DB_PASSWORD: testpass
       run: mvn -B clean verify --file pom.xml
